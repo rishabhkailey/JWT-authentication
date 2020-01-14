@@ -1,0 +1,96 @@
+npm install express-session
+
+
+let session = require('express-session')
+
+session(options)
+
+options is object 
+
+//default value
+
+{
+	secret: 'secret-key',	// only this is required rest are optional
+	cookie: {
+		path: '/',
+		httpOnly: true,
+		secure: false, // true is good
+		maxAge: null, // cookie di expiry time in milliseconds
+		expires: date object, // the one from (maxAge,expires ) defined last will be considered
+	},
+	genId: function(){  	//function to generate session id return string  by default uses 							//uid-safe library to generate session id
+		return uuid();      // uses uuids to generate session id need to import uuid
+	},	 
+	name: 'nameofthe session in res to client by default connect.sid',
+}
+
+
+// code
+
+
+// app.use(middleware)
+	how this works
+	consider express server to be stack of middlewares it will execute middleware for every http request 
+
+
+	app.use(session({
+		cookie: {
+			maxAge: 36000000  // 10mins
+		}
+	    key: "optional",
+	    secret: "required"
+	}))
+	// it will be called (or session id will be generated) every time we send request to the server , if the sessionID is already assigned then it will not assign new sessionID , server check sessionID in its memory so if server is restarted then its memory will be wiped and now if req come with sessionID server will not find that sessionID in its memory so it will call genId function of the session
+
+
+
+to access
+
+	req.sessionID
+
+	req.session  // object
+
+	has 
+		id,
+		cookie{
+			expires: boolean,	//we can change this
+			maxAge,  //returns the time left to expire in milliseconds
+			originalMaxAge,		// asli maxAge jo set kita c
+		}
+
+
+	has functions like 
+
+		destroy(callback)
+		regenerate(c)
+		reload(c)
+		save(c)
+
+
+
+how to use
+	requests which require login 
+
+	app.use('/abc',checkValidCookie(req,res,next),mainFxnForTheRequest)
+
+	in chechValidCookie if the cookie is good then call next() inside it, next() will call mainFxn for the request
+
+
+	before this we need to add userinfo into the cookie to do so 
+
+	e.g
+
+	app.route('/register',(req,res)=>{
+
+		userSchema.addUser(req, (error,response)=>{
+			if(response){
+				// add userinfo
+				req.session.userID = response.id;
+			}
+		})
+
+	}) 
+
+	now in checkValidCookie(req,res,next){
+		check for req.session.userID in database
+	}
